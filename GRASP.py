@@ -9,8 +9,16 @@ from constants import *
 
 
 def greedy_randomised_construction(availability, tutor_class, tutor_availability):
-    t0 = time.time()
-    solution = np.zeros((NUM_TUTORS, NUM_SLOTS, NUM_DAYS, NUM_ROOMS))
+    """
+    Produce a greedy randomised construction of a schedule.
+    First randomly shuffle the list of all possible allocations (slot, day, room) and the list of tutors.
+    For all possible allocations iterate over the tutors and if it's feasible,
+    assign the tutor that has the lowest marginal cost to that position.
+    """
+    # start with an empty solution
+    schedule = np.zeros((NUM_TUTORS, NUM_SLOTS, NUM_DAYS, NUM_ROOMS))
+
+    # define and shuffle all possible locations
     possible_allocations = [
         [slots_idx, day_idx, room_idx]
         for slots_idx in range(NUM_SLOTS)
@@ -19,6 +27,7 @@ def greedy_randomised_construction(availability, tutor_class, tutor_availability
     ]
     random.shuffle(possible_allocations)
 
+    # define and shuffle all tutors
     tutor_to_idx = dict(zip(availability["Slot"], availability.index))
     unassigned_tutors = tutor_class["Tutor ID"].to_list()
     random.shuffle(unassigned_tutors)
@@ -29,32 +38,39 @@ def greedy_randomised_construction(availability, tutor_class, tutor_availability
         cost = []
         valid_tutors = []
 
+        # if no more tutors to assign, stop
         if len(unassigned_tutor_idx) == 0:
             break
 
         for tutor in unassigned_tutor_idx:
+            # if the tutor is unavailable at that slot and day, continue
+            # if any tutor is already in that slot, day and room, continue
+            # if the tutor is already in a room at that slot and day, continue
             if (
                 (tutor_availability[tutor, allocation[0], allocation[1]] == 0)
-                or any(solution[:, allocation[0], allocation[1], allocation[2]])
-                or any(solution[tutor, allocation[0], allocation[1], :])
+                or any(schedule[:, allocation[0], allocation[1], allocation[2]])
+                or any(schedule[tutor, allocation[0], allocation[1], :])
             ):
                 continue
-            schedule_copy = solution.copy()
+            schedule_copy = schedule.copy()
             schedule_copy[tutor, allocation[0], allocation[1], allocation[2]] = 1
             cost.append(calculate_fitness(schedule_copy))
             valid_tutors.append(tutor)
         if len(cost) == 0:
             continue
 
+        # allocate the lowest cost tutor to that slot, day and room
         lowest_cost_tutor = valid_tutors[cost.index(min(cost))]
-        solution[lowest_cost_tutor, allocation[0], allocation[1], allocation[2]] = 1
+        schedule[lowest_cost_tutor, allocation[0], allocation[1], allocation[2]] = 1
         unassigned_tutor_idx.pop(unassigned_tutor_idx.index(lowest_cost_tutor))
 
-    return solution
+    return schedule
 
 
 def single_swap_neighbourhood(solution, tutor_availability):
-    # TODO: docstrings and comments
+    """
+    Produce a neighbourhood that contains all feasible swaps from allocations in an existing schedule
+    """
     possible_allocations = [
         [slots_idx, day_idx, room_idx]
         for slots_idx in range(NUM_SLOTS)
@@ -70,66 +86,56 @@ def single_swap_neighbourhood(solution, tutor_availability):
         current_day = current_allocations[2][i]
         current_room = current_allocations[3][i]
         for allocation in possible_allocations:
-            possible_neighbour = solution.copy()
+            neighbour = solution.copy()
             potential_slot = allocation[0]
             potential_day = allocation[1]
             potential_room = allocation[2]
-            # if the tutor is unavailable at that time and day, continue
+
+            # if the tutor is unavailable at that slot and day, continue
+            # if any tutor is already in that slot, day and room, continue
+            # if the tutor is already in a room at that slot and day, continue
             if (
                 (tutor_availability[current_tutor, potential_slot, potential_day] == 0)
-                or any(possible_neighbour[current_tutor, potential_slot, potential_day])
-                or any(
-                    possible_neighbour[:, potential_slot, potential_day, potential_room]
-                )
+                or any(neighbour[current_tutor, potential_slot, potential_day])
+                or any(neighbour[:, potential_slot, potential_day, potential_room])
             ):
                 continue
             # if there is another tutor in the potential location we want to swap to, and our current tutors position is unavailable, continue
-            if any(
-                possible_neighbour[:, potential_slot, potential_day, potential_room]
-            ):
+            if any(neighbour[:, potential_slot, potential_day, potential_room]):
                 potential_tutor = int(
                     np.where(
-                        possible_neighbour[
-                            :, potential_slot, potential_day, potential_room
-                        ]
+                        neighbour[:, potential_slot, potential_day, potential_room]
                     )[0]
                 )
                 if (
                     tutor_availability[potential_tutor, current_slot, current_day] == 0
-                    or any(
-                        possible_neighbour[potential_tutor, current_slot, current_day]
-                    )
-                    or any(
-                        possible_neighbour[:, current_slot, current_day, current_room]
-                    )
+                    or any(neighbour[potential_tutor, current_slot, current_day])
+                    or any(neighbour[:, current_slot, current_day, current_room])
                 ):
                     continue
 
-                possible_neighbour[
-                    current_tutor, current_slot, current_day, current_room
-                ] = 0
-                possible_neighbour[
+                neighbour[current_tutor, current_slot, current_day, current_room] = 0
+                neighbour[
                     current_tutor, potential_slot, potential_day, potential_room
                 ] = 1
-                possible_neighbour[
+                neighbour[
                     potential_tutor, potential_slot, potential_day, potential_room
                 ] = 0
-                possible_neighbour[
-                    potential_tutor, current_slot, current_day, current_room
-                ] = 1
+                neighbour[potential_tutor, current_slot, current_day, current_room] = 1
             else:
-                possible_neighbour[
-                    current_tutor, current_slot, current_day, current_room
-                ] = 0
-                possible_neighbour[
+                neighbour[current_tutor, current_slot, current_day, current_room] = 0
+                neighbour[
                     current_tutor, potential_slot, potential_day, potential_room
                 ] = 1
 
-            neighbourhood.append(possible_neighbour)
+            neighbourhood.append(neighbour)
     return neighbourhood
 
 
 def select_neighbour(neighbourhood):
+    """
+    Choose the lowest cost neighbour in the neighbourhood
+    """
 
     costs = []
     for neighbour in neighbourhood:
@@ -142,6 +148,11 @@ def select_neighbour(neighbourhood):
 
 
 def local_search(solution, tutor_availability):
+    """
+    Produce a local search schedule. Find the best neighbour in the neighbourhood of the current solution.
+    If the best neighbour is no better than the current solution, return the current solution.
+    Otherwise repeat.
+    """
     cost = calculate_fitness(solution)
 
     while True:
@@ -158,9 +169,13 @@ def local_search(solution, tutor_availability):
 
 
 def grasp_algorithm(n_iterations, availability, tutor_class, tutor_availability):
+    """
+    Run the GRASP algorithm. This involves,
+    iteratively finding a greedy solution and perform a random search.
+    """
     cost = np.inf
-    for _ in range(n_iterations):
-        print(f"iteration {_}")
+    for i in range(n_iterations):
+        print(f"iteration {i}")
         print("random greedy started")
         greedy_random_solution = greedy_randomised_construction(
             availability, tutor_class, tutor_availability
