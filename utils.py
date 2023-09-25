@@ -97,7 +97,7 @@ def generate_feasible_schedule(
                 available_rooms = available_rooms[0, random_slot, random_day]
 
                 # Gets room that is empty
-                random_room = generate_random_room(available_rooms)
+                random_room = generate_random_room(available_rooms, num_rooms)
 
                 # If can't allocate room: break and restart the porcess
                 if random_room == "No Rooms Available":
