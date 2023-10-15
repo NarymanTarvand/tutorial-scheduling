@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 from tabu_search_newest import *
 
 # start each iteration at 1
@@ -19,8 +20,8 @@ tabu_best_sols_i1 = [47, 46, 44, 43, 42, 41, 40, 40, 40, 39, 39, 39, 39, 38, 38,
                   34, 34, 34, 34, 34, 34, 34, 34]
 
 # add in GRASP here
-grasp_iterations_i1 = list(range(1, 101))
-grasp_best_sols_i1 = []
+grasp_iterations_i1 = list(range(60))
+grasp_best_sols_i1 = [40,40,40,39,39,39,37,37,37,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,32,32,32,32,32,32,32,32,32,32]
 
 all_iters_i1  = [ga_iterations_i1, tabu_iterations_i1, grasp_iterations_i1]
 all_best_sols_i1 = [ga_best_sols_i1, tabu_best_sols_i1, grasp_best_sols_i1]
@@ -51,8 +52,9 @@ tabu_best_sols_i2 = [78, 77, 76, 76, 75, 75, 74, 74, 74, 74, 73, 72, 72, 72, 72,
                      57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57]
 
 # add in grasp instance 2
-grasp_iterations_i2 = list(range(1, 101))
-grasp_best_sols_i2 = []
+
+grasp_iterations_i2 = list(range(60))
+grasp_best_sols_i2 = [65,65,65,65,65,65,65,65,65,65,64,64,64,64,64,64,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61,61]
 
 def ensure_max_length(lst, max_length):
     if len(lst) < max_length:
