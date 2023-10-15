@@ -328,7 +328,7 @@ def is_feasible_schedule(instance, tutor_availability, allocation_num):
     feasible = True
 
     # Extends tutor availability by one dimension, to be applied to each room
-    A = np.repeat(tutor_availability[:, :, :, np.newaxis], 6, axis=3)
+    A = np.repeat(tutor_availability[:, :, :, np.newaxis], NUM_ROOMS, axis=3)
 
     # Checks instance satisfies tutors availability
     for t in range(NUM_TUTORS):
