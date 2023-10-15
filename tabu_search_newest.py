@@ -3,8 +3,12 @@ from utils import *
 from constants import *
 import random
 import math
+import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 file = "Data_Scheduling_AN.xlsx"
+# file = "Data_Scheduling_AN_New_Instance.xlsx"
 rootpath = "./"
 sheets = pd.ExcelFile(os.path.join(rootpath, file))
 availability = pd.read_excel(sheets, "Availability AN", header=2)
@@ -58,10 +62,13 @@ def tabu_search(tabu_list_size, iter_without_improv, neighb_subset_size):
     # our first values
     best_solution = current_solution
     best_solution_value = calculate_fitness(current_solution)
+    print(f"Initial sol has value {best_solution_value}")
     tabu_list = [current_solution]
     term_counter = 0
 
     i = 0
+    iterations = []
+    best_solutions = []
     while term_counter < iter_without_improv:
         # create neighbourhood
         neighbourhood = single_swap_neighbourhood(current_solution, tutor_availability)
@@ -125,18 +132,30 @@ def tabu_search(tabu_list_size, iter_without_improv, neighb_subset_size):
             tabu_list.pop(0)
         i += 1
 
+        iterations += [i]
+        best_solutions += [best_solution_value]
         print(f"Iteration {i}, Best Value: {best_solution_value}")
 
-    return best_solution, best_solution_value
+    return iterations, best_solutions, best_solution, best_solution_value
 
+# Code to run Tabu Search, along with average time taken, amount of iterations, and the best sol out of a number of runs
 tabu_attempts = []
-num_tabu_runs = 5
+times = []
+num_tabu_runs = 10
 for i in range(num_tabu_runs):
-    sol, sol_value = tabu_search(tabu_list_size=100, iter_without_improv=100, neighb_subset_size=50)
-    tabu_attempts += [(sol, sol_value)]
-best_pair = min(tabu_attempts, key=lambda x: x[1])
-best_sol = best_pair[0]
-best_val = best_pair[1]
+    print(f"Tabu run {i}")
+    start_time = time.time()
+    tabu_iterations, tabu_best_sols, sol, sol_value = tabu_search(tabu_list_size=500, iter_without_improv=100, neighb_subset_size=100)
+    times += [float(time.time() - start_time)]
+    tabu_attempts += [(tabu_iterations, tabu_best_sols, sol, sol_value)]
+best_pair = min(tabu_attempts, key=lambda x: x[3])
+tabu_iterations = best_pair[0]
+tabu_best_sols = best_pair[1]
+best_sol = best_pair[2]
+best_val = best_pair[3]
+print(f"The average time taken per run is {np.mean(times)}")
 print(f"The best schedule achieves an objective value of {best_val}, it is:")
-print(print_schedule(sol, days, slots, rooms, availability))
+print(print_schedule(best_sol, days, slots, rooms, availability))
+print(tabu_iterations, tabu_best_sols)
+
 
