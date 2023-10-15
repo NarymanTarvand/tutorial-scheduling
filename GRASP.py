@@ -176,12 +176,12 @@ def grasp_algorithm(n_iterations, availability, tutor_class, tutor_availability)
     cost = np.inf
     for i in range(n_iterations):
         print(f"iteration {i}")
-        print("random greedy started")
+        # start randomised greedy construction
         greedy_random_solution = greedy_randomised_construction(
             availability, tutor_class, tutor_availability
         )
 
-        print("local search started")
+        # start local search
         local_search_solution, local_search_cost = local_search(
             greedy_random_solution, tutor_availability
         )
@@ -189,12 +189,13 @@ def grasp_algorithm(n_iterations, availability, tutor_class, tutor_availability)
         if local_search_cost < cost:
             cost = local_search_cost
             solution = local_search_solution
+            print(f"Optimal value of {cost}")
 
     return solution, cost
 
 
 if __name__ == "__main__":
-    n_iterations = 10
+    n_iterations = 60
 
     file = "Data_Scheduling_AN.xlsx"
     rootpath = "./"
@@ -224,9 +225,12 @@ if __name__ == "__main__":
         tutor_class["Tutor ID"].value_counts()[availability["Slot"]]
     )
 
+    t0 = time.time()
+
     solution, cost = grasp_algorithm(
         n_iterations, availability, tutor_class, tutor_availability
     )
+    print(time.time() - t0)
     # solution = greedy_randomised_construction(availability, tutor_class, tutor_availability)
 
     print(is_feasible_schedule(solution, tutor_availability, allocation_num))
